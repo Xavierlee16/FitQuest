@@ -10,20 +10,6 @@ import type {
 
 const LOCAL_WORKOUTS_KEY = "fitquest.localWorkouts";
 const PROFILE_AGE_KEY = "fitquest.profileAge";
-const CLEAN_START_KEY = "fitquest.cleanStart.20260621.v11";
-
-function getActiveUserKey() {
-  try {
-    const session = JSON.parse(localStorage.getItem("fitquest.localSession") ?? "null");
-    return session?.user?.id ? String(session.user.id) : "guest";
-  } catch {
-    return "guest";
-  }
-}
-
-function scopedKey(key: string) {
-  return `${key}.${getActiveUserKey()}`;
-}
 
 const CALISTHENICS_EXERCISES = new Set<string>([
   "pushup",
@@ -62,16 +48,8 @@ const RUNNING_MILESTONES = [10, 25, 50, 100, 250, 500];
 const CYCLING_MILESTONES = [25, 50, 100, 250, 500, 1000];
 const SWIMMING_MILESTONES = [1, 5, 10, 25, 50, 100];
 
-export function ensureLocalTestDataReset(): void {
-  if (localStorage.getItem(CLEAN_START_KEY)) {
-    return;
-  }
-
-  localStorage.removeItem(LOCAL_WORKOUTS_KEY);
-  localStorage.removeItem(PROFILE_AGE_KEY);
-  localStorage.removeItem("fitquest.recommendationHistory");
-  localStorage.setItem(CLEAN_START_KEY, "done");
-}
+export const LEGACY_LOCAL_WORKOUTS_KEY = LOCAL_WORKOUTS_KEY;
+export const LEGACY_PROFILE_AGE_KEY = PROFILE_AGE_KEY;
 
 export function getExerciseGroup(workout: Pick<Workout, "exercise_type" | "exercise_group">): ExerciseGroup {
   if (workout.exercise_group) return workout.exercise_group;
@@ -95,24 +73,16 @@ export function calculateLocalWorkoutXp(payload: CreateWorkoutPayload): number {
   return Math.round(payload.amount);
 }
 
-export function getLocalWorkouts(): Workout[] {
-  const saved = localStorage.getItem(scopedKey(LOCAL_WORKOUTS_KEY));
-  if (!saved) {
-    return [];
-  }
-
-  try {
-    return JSON.parse(saved) as Workout[];
-  } catch {
-    return [];
-  }
-}
-
-export function saveLocalWorkout(payload: CreateWorkoutPayload): Workout {
+export function createWorkoutFromPayload(
+  payload: CreateWorkoutPayload,
+  userId: string | number,
+  id: string | number = crypto.randomUUID(),
+  workoutDate = new Date().toISOString().slice(0, 10),
+): Workout {
   const isWalking = payload.exercise_type === "walking";
-  const workout: Workout = {
-    id: Date.now(),
-    user_id: 1,
+  return {
+    id,
+    user_id: userId,
     exercise_group: payload.exercise_group,
     exercise_type: payload.exercise_type,
     amount: payload.amount,
@@ -124,26 +94,9 @@ export function saveLocalWorkout(payload: CreateWorkoutPayload): Workout {
     weight_unit: payload.weight_unit ?? null,
     rpe: isWalking ? null : payload.rpe ?? null,
     difficulty: "normal",
-    date: new Date().toISOString().slice(0, 10),
+    date: workoutDate,
     xp_earned: calculateLocalWorkoutXp(payload),
   };
-
-  const workouts = [workout, ...getLocalWorkouts()];
-  localStorage.setItem(scopedKey(LOCAL_WORKOUTS_KEY), JSON.stringify(workouts));
-  return workout;
-}
-
-export function getLocalProfileAge(): number {
-  const savedAge = Number(localStorage.getItem(scopedKey(PROFILE_AGE_KEY)));
-  if (Number.isFinite(savedAge) && savedAge > 0) {
-    return savedAge;
-  }
-
-  return 25;
-}
-
-export function saveLocalProfileAge(age: number): void {
-  localStorage.setItem(scopedKey(PROFILE_AGE_KEY), String(age));
 }
 
 export function buildLocalStats(workouts: Workout[]): WorkoutStats {
@@ -677,7 +630,7 @@ function buildStrengthRecommendation(workout: Workout): TrainingRecommendation {
 export function buildLocalRecommendation(
   workouts: Workout[],
   goal = "general fitness",
-  age = getLocalProfileAge(),
+  age = 25,
 ): TrainingRecommendation {
   const recentWorkouts = getRecentWorkouts(workouts);
   const goalKey = goal.toLowerCase();
@@ -734,7 +687,7 @@ export function buildLocalRecommendation(
 export function buildLocalRecommendations(
   workouts: Workout[],
   goal = "general fitness",
-  age = getLocalProfileAge(),
+  age = 25,
 ): TrainingRecommendation[] {
   const recentWorkouts = getRecentWorkouts(workouts);
   const recentCardio = recentWorkouts.filter(

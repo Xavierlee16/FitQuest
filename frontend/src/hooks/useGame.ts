@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getGameSummary } from "../api";
-import { buildLocalGameSummary, getLocalWorkouts } from "../localFitness";
+import { supabase } from "../supabaseClient";
+import { getSupabaseGameSummary } from "../supabaseGame";
 import type { GameSummary } from "../types";
 
 export function useGame(refreshKey = 0) {
@@ -12,11 +12,17 @@ export function useGame(refreshKey = 0) {
     setLoading(true);
     setError("");
 
-    getGameSummary()
+    supabase.auth
+      .getUser()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (!data.user) throw new Error("Login required.");
+        return getSupabaseGameSummary(data.user.id);
+      })
       .then(setGame)
-      .catch(() => {
-        setGame(buildLocalGameSummary(getLocalWorkouts()));
-        setError("");
+      .catch((gameError) => {
+        setGame(null);
+        setError(gameError instanceof Error ? gameError.message : "Could not load game progress.");
       })
       .finally(() => setLoading(false));
   }, [refreshKey]);

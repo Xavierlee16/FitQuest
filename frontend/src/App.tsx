@@ -1,35 +1,24 @@
 import { useEffect, useState } from "react";
 
-import {
-  changeAccountPassword,
-  createWorkout,
-  getTrainingRecommendation,
-  getWorkoutHistory,
-  getWorkoutStats,
-  loginAccount,
-  logoutAccount,
-  registerAccount,
-  setApiAuthToken,
-  updateAccountName,
-} from "./api";
 import { AppShell } from "./components/AppShell";
 import {
-  changeLocalPassword,
-  getLocalSession,
-  loginLocalAccount,
-  logoutLocalAccount,
-  registerLocalAccount,
-  updateLocalAccountName,
-} from "./localAuth";
+  changeSupabasePassword,
+  getSupabaseAuthSession,
+  loginSupabaseAccount,
+  logoutSupabaseAccount,
+  onSupabaseAuthChange,
+  registerSupabaseAccount,
+  updateSupabaseProfileName,
+} from "./supabaseAuth";
 import {
-  buildLocalRecommendations,
-  buildLocalStats,
-  ensureLocalTestDataReset,
-  getLocalProfileAge,
-  getLocalWorkouts,
-  saveLocalWorkout,
-  saveLocalProfileAge,
-} from "./localFitness";
+  createSupabaseWorkout,
+  getSupabaseProfileAge,
+  getSupabaseTrainingRecommendations,
+  getSupabaseWorkoutHistory,
+  getSupabaseWorkoutStats,
+  saveSupabaseProfileAge,
+} from "./supabaseFitness";
+import { migrateLegacyLocalFitnessData } from "./supabaseMigration";
 import { Dashboard } from "./pages/Dashboard";
 import { AuthPage } from "./pages/AuthPage";
 import { LogWorkout } from "./pages/LogWorkout";
@@ -44,79 +33,67 @@ import type {
   WorkoutStats,
 } from "./types";
 
-ensureLocalTestDataReset();
-const initialSession = getLocalSession();
-if (initialSession?.token) {
-  setApiAuthToken(initialSession.token);
-}
-
 export default function App() {
   const [activePage, setActivePage] = useState<Page>("dashboard");
-  const [authUser, setAuthUser] = useState<AuthUser | null>(initialSession?.user ?? null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [stats, setStats] = useState<WorkoutStats | null>(null);
   const [goal, setGoal] = useState<RecommendationGoal>("general fitness");
-  const [profileAge, setProfileAge] = useState(getLocalProfileAge());
+  const [profileAge, setProfileAge] = useState(25);
   const [recommendations, setRecommendations] = useState<TrainingRecommendation[]>([]);
   const [gameRefreshKey, setGameRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
   async function loadFitnessData() {
+    if (!authUser) return;
+
     setIsLoading(true);
     setError("");
-    let loadedWorkouts: Workout[] = [];
 
     try {
-      const [historyData, statsData] = await Promise.all([
-        getWorkoutHistory(),
-        getWorkoutStats(),
+      await migrateLegacyLocalFitnessData(authUser.id);
+      const age = await getSupabaseProfileAge(authUser.id);
+      const [historyData, statsData, recommendationData] = await Promise.all([
+        getSupabaseWorkoutHistory(authUser.id),
+        getSupabaseWorkoutStats(authUser.id),
+        getSupabaseTrainingRecommendations(authUser.id, goal, age),
       ]);
-      loadedWorkouts = historyData;
+      setProfileAge(age);
       setWorkouts(historyData);
       setStats(statsData);
-    } catch {
-      const localWorkouts = getLocalWorkouts();
-      setWorkouts(localWorkouts);
-      setStats(buildLocalStats(localWorkouts));
-      setRecommendations(buildLocalRecommendations(localWorkouts, goal, profileAge));
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const recommendationData = await getTrainingRecommendation(goal);
-      setRecommendations([recommendationData]);
-    } catch {
-      setRecommendations(buildLocalRecommendations(loadedWorkouts, goal, profileAge));
+      setRecommendations(recommendationData);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Could not load FitQuest data.");
     } finally {
       setIsLoading(false);
     }
   }
 
   async function handleCreateWorkout(payload: CreateWorkoutPayload) {
+    if (!authUser) return;
+
     try {
-      await createWorkout(payload);
+      await createSupabaseWorkout(authUser.id, payload);
       await loadFitnessData();
       setGameRefreshKey((current) => current + 1);
       setActivePage("dashboard");
-    } catch {
-      const localWorkout = saveLocalWorkout(payload);
-      const localWorkouts = [localWorkout, ...workouts];
-      setWorkouts(localWorkouts);
-      setStats(buildLocalStats(localWorkouts));
-      setRecommendations(buildLocalRecommendations(localWorkouts, goal, profileAge));
-      setError("");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Could not save workout.");
       setActivePage("dashboard");
     }
   }
 
   function handleAgeChange(age: number) {
+    if (!authUser) return;
     setProfileAge(age);
-    saveLocalProfileAge(age);
-    setRecommendations(buildLocalRecommendations(workouts, goal, age));
+    void saveSupabaseProfileAge(authUser.id, age).catch((ageError) => {
+      setError(ageError instanceof Error ? ageError.message : "Could not save age.");
+    });
+    void getSupabaseTrainingRecommendations(authUser.id, goal, age).then(setRecommendations);
     setGameRefreshKey((current) => current + 1);
   }
 
@@ -124,22 +101,12 @@ export default function App() {
     setAuthLoading(true);
     setAuthError("");
     try {
-      const session = await loginAccount(payload);
-      setApiAuthToken(session.token);
-      localStorage.setItem("fitquest.localSession", JSON.stringify(session));
+      const session = await loginSupabaseAccount(payload.email, payload.password);
       setAuthUser(session.user);
       setGoal(session.user.goal);
-      setProfileAge(getLocalProfileAge());
-    } catch {
-      try {
-        const session = await loginLocalAccount(payload.email, payload.password);
-        setApiAuthToken("");
-        setAuthUser(session.user);
-        setGoal(session.user.goal);
-        setProfileAge(getLocalProfileAge());
-      } catch (localError) {
-        setAuthError(localError instanceof Error ? localError.message : "Could not log in.");
-      }
+      setProfileAge(await getSupabaseProfileAge(session.user.id));
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Could not log in.");
     } finally {
       setAuthLoading(false);
     }
@@ -154,22 +121,12 @@ export default function App() {
     setAuthLoading(true);
     setAuthError("");
     try {
-      const session = await registerAccount(payload);
-      setApiAuthToken(session.token);
-      localStorage.setItem("fitquest.localSession", JSON.stringify(session));
+      const session = await registerSupabaseAccount(payload);
       setAuthUser(session.user);
       setGoal(session.user.goal);
-      setProfileAge(getLocalProfileAge());
-    } catch {
-      try {
-        const session = await registerLocalAccount(payload);
-        setApiAuthToken("");
-        setAuthUser(session.user);
-        setGoal(session.user.goal);
-        setProfileAge(getLocalProfileAge());
-      } catch (localError) {
-        setAuthError(localError instanceof Error ? localError.message : "Could not create account.");
-      }
+      setProfileAge(await getSupabaseProfileAge(session.user.id));
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Could not create account.");
     } finally {
       setAuthLoading(false);
     }
@@ -177,43 +134,78 @@ export default function App() {
 
   async function handleLogout() {
     try {
-      await logoutAccount();
+      await logoutSupabaseAccount();
     } catch {
-      // local-only sessions have no server session to close
+      // Let the UI clear even if the network request cannot complete.
     }
-    setApiAuthToken("");
-    logoutLocalAccount();
     setAuthUser(null);
     setWorkouts([]);
     setStats(null);
     setRecommendations([]);
-    setProfileAge(getLocalProfileAge());
+    setProfileAge(25);
     setActivePage("dashboard");
   }
 
   async function handleNameChange(name: string) {
     if (!authUser) return;
-    try {
-      const updated = await updateAccountName(name);
-      setAuthUser(updated);
-    } catch {
-      const updated = updateLocalAccountName(authUser.id, name);
-      setAuthUser(updated);
-    }
+    const updated = await updateSupabaseProfileName(authUser.id, name);
+    setAuthUser(updated);
   }
 
   async function handlePasswordChange(currentPassword: string, newPassword: string) {
     if (!authUser) return;
-    try {
-      await changeAccountPassword(currentPassword, newPassword);
-    } catch {
-      await changeLocalPassword(authUser.id, currentPassword, newPassword);
-    }
+    await changeSupabasePassword(currentPassword, newPassword);
   }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getSupabaseAuthSession()
+      .then((session) => {
+        if (!isMounted) return;
+        if (session) {
+          setAuthUser(session.user);
+          setGoal(session.user.goal);
+          void getSupabaseProfileAge(session.user.id).then(setProfileAge);
+        }
+      })
+      .catch((error) => {
+        if (isMounted) setAuthError(error instanceof Error ? error.message : "Could not restore your session.");
+      })
+      .finally(() => {
+        if (isMounted) setAuthReady(true);
+      });
+
+    const unsubscribe = onSupabaseAuthChange((session) => {
+      if (!isMounted) return;
+      if (session) {
+        setAuthUser(session.user);
+        setGoal(session.user.goal);
+        void getSupabaseProfileAge(session.user.id).then(setProfileAge);
+      } else {
+        setAuthUser(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (authUser) void loadFitnessData();
   }, [goal, authUser?.id]);
+
+  if (!authReady) {
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <p className="status-text">Loading FitQuest...</p>
+        </section>
+      </main>
+    );
+  }
 
   if (!authUser) {
     return (

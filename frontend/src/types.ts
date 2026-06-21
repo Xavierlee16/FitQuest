@@ -39,8 +39,8 @@ export type ExerciseType =
   | "cable_row";
 
 export type Workout = {
-  id: number;
-  user_id: number;
+  id: number | string;
+  user_id: number | string;
   exercise_group?: ExerciseGroup;
   exercise_type: ExerciseType;
   amount: number;
