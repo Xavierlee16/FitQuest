@@ -1,0 +1,1 @@
+"""FitQuest backend application package."""

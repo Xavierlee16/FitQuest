@@ -1,0 +1,9 @@
+frontend/node_modules/
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+backend/__pycache__/
+backend/tests/__pycache__/
+*.pyc
+*.db
+outputs/
+work/

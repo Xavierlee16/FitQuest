@@ -1,0 +1,152 @@
+import type {
+  GameSummary,
+  TrainingRecommendation,
+  Workout,
+  WorkoutStats,
+} from "./types";
+
+export const demoWorkouts: Workout[] = [
+  {
+    id: 1,
+    user_id: 1,
+    exercise_type: "pushup",
+    amount: 60,
+    unit: "reps",
+    duration: null,
+    difficulty: "normal",
+    date: "2026-06-21",
+    xp_earned: 60,
+  },
+  {
+    id: 3,
+    user_id: 1,
+    exercise_type: "cycling",
+    amount: 12,
+    unit: "km",
+    duration: 35,
+    difficulty: "normal",
+    date: "2026-06-21",
+    xp_earned: 300,
+  },
+  {
+    id: 2,
+    user_id: 1,
+    exercise_type: "walking",
+    amount: 5000,
+    unit: "steps",
+    duration: null,
+    difficulty: "normal",
+    date: "2026-06-21",
+    xp_earned: 100,
+  },
+];
+
+export const demoStats: WorkoutStats = {
+  total_workouts: demoWorkouts.length,
+  total_xp: 460,
+  level: 3,
+  streak: 3,
+  workouts_by_exercise: {
+    pushup: 1,
+    walking: 1,
+  },
+};
+
+export const demoRecommendation: TrainingRecommendation = {
+  goal: "general fitness",
+  exercise_type: "pushup",
+  title: "Build pushup volume",
+  recommendation: "Try 5 sets x 30 pushups.",
+  reason:
+    "Your recent pushup work suggests you can build strength with steady submaximal sets.",
+};
+
+export const demoGameSummary: GameSummary = {
+  level: 3,
+  total_xp: 460,
+  xp_current: 160,
+  xp_needed: 300,
+  achievements: [
+    {
+      id: 1,
+      code: "first_workout",
+      name: "First Workout",
+      description: "Complete your first workout.",
+      rule_type: "workout_count",
+      target_amount: 1,
+      unit: "workouts",
+      progress_amount: 1,
+      is_unlocked: true,
+      unlocked_at: "2026-06-21",
+    },
+    {
+      id: 2,
+      code: "pushups_100",
+      name: "100 Pushups Completed",
+      description: "Complete 100 total pushups.",
+      rule_type: "exercise_total",
+      target_amount: 100,
+      unit: "reps",
+      progress_amount: 60,
+      is_unlocked: false,
+      unlocked_at: null,
+    },
+  ],
+  badges: [
+    {
+      id: 1,
+      code: "bronze",
+      name: "Bronze",
+      description: "Reach level 10.",
+      min_level: 10,
+      is_earned: false,
+      earned_at: null,
+    },
+    {
+      id: 2,
+      code: "silver",
+      name: "Silver",
+      description: "Reach level 25.",
+      min_level: 25,
+      is_earned: false,
+      earned_at: null,
+    },
+    {
+      id: 3,
+      code: "gold",
+      name: "Gold",
+      description: "Reach level 50.",
+      min_level: 50,
+      is_earned: false,
+      earned_at: null,
+    },
+  ],
+  daily_quests: [
+    {
+      id: 1,
+      code: "walk_5000_steps",
+      name: "Walk 5000 Steps",
+      description: "Walk 5000 steps today.",
+      exercise_type: "walking",
+      target_amount: 5000,
+      unit: "steps",
+      xp_reward: 25,
+      progress_amount: 5000,
+      is_completed: true,
+      completed_at: "2026-06-21",
+    },
+    {
+      id: 2,
+      code: "complete_50_pushups",
+      name: "Complete 50 Pushups",
+      description: "Complete 50 pushups today.",
+      exercise_type: "pushup",
+      target_amount: 50,
+      unit: "reps",
+      xp_reward: 25,
+      progress_amount: 60,
+      is_completed: true,
+      completed_at: "2026-06-21",
+    },
+  ],
+};
