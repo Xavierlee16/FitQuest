@@ -1,0 +1,190 @@
+﻿Diagnose log at 2026-06-21T18:31:39Z
+
+AppPath: C:\Program Files\Git\mingw64\bin\git-credential-manager.exe
+InstallDir: C:\Program Files\Git\mingw64\bin\
+Version: 2.6.1+786ab03440ddc82e807a97c0e540f5247e44cec6
+
+------------
+Diagnostic: Environment
+Skipped: False
+Success: True
+Exception: None
+Log:
+OSType: Windows
+OSVersion: 10.0 (build 26200)
+Reading environment variables... OK
+ Variables:
+HOMEPATH=\Users\Xavie
+DriverData=C:\Windows\System32\Drivers\DriverData
+COMPUTERNAME=LAPTOP-KPLI7L6R
+MSYSTEM=MINGW64
+CommonProgramFiles(x86)=C:\Program Files (x86)\Common Files
+OneDrive=C:\Users\Xavie\OneDrive
+TMP=C:\Users\Xavie\AppData\Local\Temp
+HOME=C:\Users\Xavie
+PROCESSOR_REVISION=8c01
+PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
+GIT_EXEC_PATH=C:/Program Files/Git/mingw64/libexec/git-core
+TEMP=C:\Users\Xavie\AppData\Local\Temp
+LOCALAPPDATA=C:\Users\Xavie\AppData\Local
+PUBLIC=C:\Users\Public
+TERM=xterm-256color
+EFC_17100_1592913036=1
+COLORTERM=truecolor
+USERDOMAIN=LAPTOP-KPLI7L6R
+ProgramFiles(x86)=C:\Program Files (x86)
+EFC_17100_4126798990=0
+Path=C:/Program Files/Git/mingw64/libexec/git-core;C:\Program Files\Git\mingw64\bin;C:\Program Files\Git\usr\bin;C:\Users\Xavie\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\dotnet\;C:\Program Files\Git\cmd;C:\Program Files\nodejs\;C:\Program Files\MySQL\MySQL Shell 8.0\bin\;C:\Users\Xavie\AppData\Local\Microsoft\WindowsApps;C:\Users\Xavie\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\Xavie\AppData\Roaming\npm;C:\Users\Xavie\AppData\Local\GitHubDesktop\bin;C:\Program Files\MySQL\MySQL Server 8.0\bin\;
+PROCESSOR_LEVEL=6
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 140 Stepping 1, GenuineIntel
+TMPDIR=C:\Users\Xavie\AppData\Local\Temp
+PSModulePath=C:\Users\Xavie\OneDrive\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell\Modules;C:\WINDOWS\system32\WindowsPowerShell\v1.0\Modules
+NUMBER_OF_PROCESSORS=8
+FPS_BROWSER_USER_PROFILE_STRING=Default
+CommonProgramFiles=C:\Program Files (x86)\Common Files
+asl.log=Destination=file
+PLINK_PROTOCOL=ssh
+ProgramData=C:\ProgramData
+ProgramW6432=C:\Program Files
+ProgramFiles=C:\Program Files (x86)
+GIT_TRACE2_PARENT_SID=b2ecd149-2a59-4b40-b07b-f56819aa2981
+SystemRoot=C:\WINDOWS
+SESSIONNAME=Console
+LC_CTYPE=C.UTF-8
+CommonProgramW6432=C:\Program Files\Common Files
+ZES_ENABLE_SYSMAN=1
+LOGONSERVER=\\LAPTOP-KPLI7L6R
+USERPROFILE=C:\Users\Xavie
+USERDOMAIN_ROAMINGPROFILE=LAPTOP-KPLI7L6R
+APPDATA=C:\Users\Xavie\AppData\Roaming
+HOMEDRIVE=C:
+USERNAME=Xavie
+PROCESSOR_ARCHITEW6432=AMD64
+FPS_BROWSER_APP_PROFILE_STRING=Internet Explorer
+PROCESSOR_ARCHITECTURE=x86
+OS=Windows_NT
+ComSpec=C:\WINDOWS\system32\cmd.exe
+SystemDrive=C:
+windir=C:\WINDOWS
+OneDriveConsumer=C:\Users\Xavie\OneDrive
+ALLUSERSPROFILE=C:\ProgramData
+
+
+------------
+Diagnostic: File system
+Skipped: False
+Success: True
+Exception: None
+Log:
+Temporary directory is 'C:\Users\Xavie\AppData\Local\Temp\'...
+Checking basic file I/O...
+Writing to temporary file 'C:\Users\Xavie\AppData\Local\Temp\bafb4110bf8f917acea03088'... OK
+Reading from temporary file 'C:\Users\Xavie\AppData\Local\Temp\bafb4110bf8f917acea03088'... OK
+Deleting temporary file 'C:\Users\Xavie\AppData\Local\Temp\bafb4110bf8f917acea03088'... OK
+Testing IFileSystem instance...
+UserHomePath: C:\Users\Xavie
+UserDataDirectoryPath: C:\Users\Xavie\.gcm
+GetCurrentDirectory(): C:\Users\Xavie\Documents\Codex\2026-06-15\i-am-building-a-fitness-gamification
+
+------------
+Diagnostic: Networking
+Skipped: False
+Success: True
+Exception: None
+Log:
+Checking networking and HTTP stack...
+Creating HTTP client... OK
+IsNetworkAvailable: True
+Sending HEAD request to http://example.com...Sending HEAD request to https://example.com... OK
+ OK
+Acquiring free TCP port... OK
+Testing local HTTP loopback connections...
+Creating new HTTP listener for http://localhost:64835/... OK
+Waiting for loopback connection... OK
+Writing response... OK
+Waiting for response data... OK
+Loopback connection data OK
+
+------------
+Diagnostic: Git
+Skipped: False
+Success: True
+Exception: None
+Log:
+Getting Git version... OK
+Git version is '2.48.1.windows.1'
+Locating current repository...Git repository at 'C:/Users/Xavie/Documents/Codex/2026-06-15/i-am-building-a-fitness-gamification/.git'
+ OK
+Listing all Git configuration... OK
+Git configuration:
+file:C:/Program Files/Git/etc/gitconfig	diff.astextplain.textconv=astextplain
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Program Files/Git/etc/gitconfig	filter.lfs.required=true
+file:C:/Program Files/Git/etc/gitconfig	http.sslbackend=schannel
+file:C:/Program Files/Git/etc/gitconfig	core.autocrlf=true
+file:C:/Program Files/Git/etc/gitconfig	core.fscache=true
+file:C:/Program Files/Git/etc/gitconfig	core.symlinks=false
+file:C:/Program Files/Git/etc/gitconfig	pull.rebase=false
+file:C:/Program Files/Git/etc/gitconfig	credential.helper=manager
+file:C:/Program Files/Git/etc/gitconfig	credential.https://dev.azure.com.usehttppath=true
+file:C:/Program Files/Git/etc/gitconfig	init.defaultbranch=master
+file:C:/Users/Xavie/.gitconfig	filter.lfs.required=true
+file:C:/Users/Xavie/.gitconfig	filter.lfs.clean=git-lfs clean -- %f
+file:C:/Users/Xavie/.gitconfig	filter.lfs.smudge=git-lfs smudge -- %f
+file:C:/Users/Xavie/.gitconfig	filter.lfs.process=git-lfs filter-process
+file:C:/Users/Xavie/.gitconfig	user.name=Xavier Lee
+file:C:/Users/Xavie/.gitconfig	user.email=xavierleeziyang@gmail.com
+file:C:/Users/Xavie/.gitconfig	user.password=Xlzy@01092006
+file:C:/Users/Xavie/.gitconfig	credential.https://git.chatgpt-team.site.provider=generic
+file:C:/Users/Xavie/.gitconfig	credential.helper=store
+file:.git/config	core.repositoryformatversion=0
+file:.git/config	core.filemode=false
+file:.git/config	core.bare=false
+file:.git/config	core.logallrefupdates=true
+file:.git/config	core.symlinks=false
+file:.git/config	core.ignorecase=true
+file:.git/config	remote.origin.url=https://github.com/Xavierlee16/FitQuest.git
+file:.git/config	remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+file:.git/config	branch.main.remote=origin
+file:.git/config	branch.main.merge=refs/heads/main
+file:.git/config	remote.sites.url=https://git.chatgpt-team.site/dec4ab91-c33a-4950-a505-e705006065a1/appgprj_6a380c14a4108191857c3c75f56ae71a.git
+file:.git/config	remote.sites.fetch=+refs/heads/*:refs/remotes/sites/*
+
+
+------------
+Diagnostic: Credential storage
+Skipped: False
+Success: True
+Exception: None
+Log:
+ICredentialStore instance is of type: CredentialStore
+Writing test credential... OK
+Reading test credential... OK
+Deleting test credential... OK
+
+------------
+Diagnostic: Microsoft authentication (AAD/MSA)
+Skipped: False
+Success: True
+Exception: None
+Log:
+Broker is not enabled.
+Flow type is: Auto
+Gathering MSAL token cache data... OK
+CacheDirectory: C:\Users\Xavie\AppData\Local\.IdentityService
+CacheFileName: msal.cache
+CacheFilePath: C:\Users\Xavie\AppData\Local\.IdentityService\msal.cache
+Creating cache helper... OK
+Verifying MSAL token cache persistence... OK
+
+------------
+Diagnostic: GitHub API
+Skipped: False
+Success: True
+Exception: None
+Log:
+Using 'https://github.com/' as API target.
+Querying '/meta' endpoint... OK
+
