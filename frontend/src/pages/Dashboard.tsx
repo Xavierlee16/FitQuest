@@ -1,9 +1,13 @@
+import { useState } from "react";
+
 import AchievementList from "../components/AchievementList";
 import BadgeList from "../components/BadgeList";
 import QuestList from "../components/QuestList";
 import { WorkoutList } from "../components/WorkoutList";
 import { useGame } from "../hooks/useGame";
 import type {
+  CoachMessage,
+  CoachReply,
   RecommendationGoal,
   TrainingRecommendation,
   Workout,
@@ -17,6 +21,12 @@ type DashboardProps = {
   workouts: Workout[];
   recommendations: TrainingRecommendation[];
   isLoading: boolean;
+  onAskCoach: (
+    recommendation: TrainingRecommendation,
+    question: string,
+    conversation: CoachMessage[],
+  ) => Promise<CoachReply>;
+  onConfirmRecommendation: (recommendation: TrainingRecommendation) => Promise<void>;
   onGoalChange: (goal: RecommendationGoal) => void;
 };
 
@@ -27,6 +37,8 @@ export function Dashboard({
   workouts,
   recommendations,
   isLoading,
+  onAskCoach,
+  onConfirmRecommendation,
   onGoalChange,
 }: DashboardProps) {
   const { game, loading: gameLoading, error: gameError } = useGame(gameRefreshKey);
@@ -38,6 +50,43 @@ export function Dashboard({
   const xpCurrent = game?.xp_current ?? 0;
   const xpNeeded = game?.xp_needed ?? 1;
   const xpProgress = xpNeeded > 0 ? (xpCurrent / xpNeeded) * 100 : 0;
+
+  const [openCoachIndex, setOpenCoachIndex] = useState<number | null>(null);
+  const [coachMessages, setCoachMessages] = useState<Record<number, CoachMessage[]>>({});
+  const [coachDrafts, setCoachDrafts] = useState<Record<number, string>>({});
+  const [coachPlans, setCoachPlans] = useState<Record<number, TrainingRecommendation>>({});
+  const [coachLoadingIndex, setCoachLoadingIndex] = useState<number | null>(null);
+  const [confirmingIndex, setConfirmingIndex] = useState<number | null>(null);
+
+  async function handleCoachSubmit(index: number, recommendation: TrainingRecommendation) {
+    const question = (coachDrafts[index] ?? "").trim();
+    if (!question || coachLoadingIndex !== null) return;
+
+    const previousMessages = coachMessages[index] ?? [];
+    const nextMessages: CoachMessage[] = [...previousMessages, { role: "user", content: question }];
+    setCoachMessages((current) => ({ ...current, [index]: nextMessages }));
+    setCoachDrafts((current) => ({ ...current, [index]: "" }));
+    setCoachLoadingIndex(index);
+
+    const reply = await onAskCoach(recommendation, question, nextMessages);
+    setCoachMessages((current) => ({
+      ...current,
+      [index]: [...(current[index] ?? nextMessages), { role: "coach", content: reply.message }],
+    }));
+
+    if (reply.recommendation) {
+      setCoachPlans((current) => ({ ...current, [index]: reply.recommendation as TrainingRecommendation }));
+    }
+
+    setCoachLoadingIndex(null);
+  }
+
+  async function handleConfirm(index: number, recommendation: TrainingRecommendation) {
+    setConfirmingIndex(index);
+    await onConfirmRecommendation(coachPlans[index] ?? recommendation);
+    setConfirmingIndex(null);
+    setOpenCoachIndex(null);
+  }
 
   return (
     <section className="page">
@@ -79,6 +128,13 @@ export function Dashboard({
               <div className="recommendation-list">
                 {recommendations.map((recommendation, index) => (
                   <article className="recommendation-card" key={`${recommendation.title}-${index}`}>
+                    {recommendation.is_active_plan && (
+                      <div className="active-plan-banner">
+                        <span>Active Plan</span>
+                        <p>This plan stays active until you log a workout or confirm a new plan.</p>
+                      </div>
+                    )}
+
                     <div className="recommendation-card-header">
                       <div>
                         <p className="recommendation-title">
@@ -90,6 +146,15 @@ export function Dashboard({
                         <span className={`intensity-pill ${recommendation.intensity}`}>
                           {recommendation.intensity}
                         </span>
+                      )}
+                    </div>
+
+                    <div className="recommendation-meta">
+                      <span className={`source-pill ${recommendation.source?.startsWith("AI") ? "ai" : "fallback"}`}>
+                        Source: {recommendation.source ?? "Rule engine"}
+                      </span>
+                      {typeof recommendation.confidence === "number" && (
+                        <span>Confidence: {Math.round(recommendation.confidence * 100)}%</span>
                       )}
                     </div>
 
@@ -116,6 +181,14 @@ export function Dashboard({
                       <span>Plan</span>
                       <p>{recommendation.recommendation}</p>
                     </div>
+
+                    {recommendation.suggested_action && (
+                      <div className="recommendation-section action-section">
+                        <span>Suggested action</span>
+                        <p>{recommendation.suggested_action}</p>
+                      </div>
+                    )}
+
                     {recommendation.strength_guidance && (
                       <div className="recommendation-section">
                         <span>Strength guidance</span>
@@ -140,6 +213,75 @@ export function Dashboard({
                       <p className="recommendation-influence">
                         Based on: {recommendation.influenced_by.join("; ")}
                       </p>
+                    )}
+
+                    <div className="coach-actions">
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        onClick={() => setOpenCoachIndex(openCoachIndex === index ? null : index)}
+                      >
+                        {openCoachIndex === index ? "Close Coach" : "Ask Coach"}
+                      </button>
+                      <button
+                        className="primary-button compact-button"
+                        type="button"
+                        disabled={confirmingIndex === index}
+                        onClick={() => handleConfirm(index, recommendation)}
+                      >
+                        {confirmingIndex === index ? "Confirming..." : "Confirm Plan"}
+                      </button>
+                    </div>
+
+                    {openCoachIndex === index && (
+                      <div className="coach-panel">
+                        <div className="active-plan-section">
+                          <span>Active plan preview</span>
+                          <strong>{(coachPlans[index] ?? recommendation).title}</strong>
+                          <p>{(coachPlans[index] ?? recommendation).recommendation}</p>
+                        </div>
+
+                        {(coachMessages[index] ?? []).length > 0 && (
+                          <div className="coach-conversation">
+                            {(coachMessages[index] ?? []).map((message, messageIndex) => (
+                              <p className={`coach-message ${message.role}`} key={`${message.role}-${messageIndex}`}>
+                                <strong>{message.role === "user" ? "You" : "Coach"}:</strong> {message.content}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+
+                        <label className="coach-input">
+                          <span>Ask a follow-up</span>
+                          <textarea
+                            rows={3}
+                            value={coachDrafts[index] ?? ""}
+                            onChange={(event) =>
+                              setCoachDrafts((current) => ({ ...current, [index]: event.target.value }))
+                            }
+                            placeholder="Can you make this easier, swap exercises, or fit it into 20 minutes?"
+                          />
+                        </label>
+
+                        <div className="coach-actions">
+                          <button
+                            className="primary-button compact-button"
+                            type="button"
+                            disabled={coachLoadingIndex === index}
+                            onClick={() => handleCoachSubmit(index, recommendation)}
+                          >
+                            {coachLoadingIndex === index ? "Asking..." : "Send"}
+                          </button>
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            disabled={confirmingIndex === index}
+                            onClick={() => handleConfirm(index, recommendation)}
+                          >
+                            {confirmingIndex === index ? "Confirming..." : "Confirm Plan"}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </article>
                 ))}

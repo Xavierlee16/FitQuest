@@ -561,7 +561,15 @@ h2 {
   gap: 8px;
 }
 
+.recommendation-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .recommendation-metrics span,
+.recommendation-meta span,
 .intensity-pill {
   background: #eef4f0;
   border-radius: 8px;
@@ -574,6 +582,16 @@ h2 {
 .intensity-pill {
   text-transform: capitalize;
   white-space: nowrap;
+}
+
+.source-pill.ai {
+  background: #eef2ff;
+  color: #3346a3;
+}
+
+.source-pill.fallback {
+  background: #fff8e6;
+  color: #7a5a11;
 }
 
 .intensity-pill.hard {
@@ -623,6 +641,114 @@ h2 {
 .recommendation-section p {
   color: #344150;
   margin: 0;
+}
+
+.action-section {
+  background: #f6fbf8;
+  border-color: #b9dec8;
+}
+
+.action-section span {
+  color: #17663e;
+}
+
+.action-section p {
+  color: #10233a;
+  font-weight: 800;
+}
+
+.active-plan-banner {
+  background: #eef2ff;
+  border: 1px solid #cfd7ff;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+
+.active-plan-banner span,
+.active-plan-section span,
+.coach-input span {
+  color: #3346a3;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.active-plan-banner p,
+.active-plan-section p {
+  color: #344150;
+  margin: 0;
+}
+
+.coach-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.compact-button {
+  min-height: 38px;
+  padding: 8px 12px;
+}
+
+.coach-panel {
+  background: #ffffff;
+  border: 1px solid #dbe5ee;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.active-plan-section {
+  background: #f6fbf8;
+  border: 1px solid #b9dec8;
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.active-plan-section strong {
+  color: #10233a;
+}
+
+.coach-conversation {
+  display: grid;
+  gap: 8px;
+}
+
+.coach-message {
+  border-radius: 8px;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.coach-message.user {
+  background: #eef4f0;
+  color: #10233a;
+}
+
+.coach-message.coach {
+  background: #eef2ff;
+  color: #263773;
+}
+
+.coach-input {
+  display: grid;
+  gap: 6px;
+}
+
+.coach-input textarea {
+  border: 1px solid #c9d4df;
+  border-radius: 8px;
+  color: #10233a;
+  font: inherit;
+  min-height: 88px;
+  padding: 10px 12px;
+  resize: vertical;
 }
 
 .recommendation-steps {

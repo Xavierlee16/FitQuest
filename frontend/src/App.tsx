@@ -11,6 +11,7 @@ import {
   updateSupabaseProfileName,
 } from "./supabaseAuth";
 import {
+  confirmSupabaseActiveRecommendation,
   createSupabaseWorkout,
   getSupabaseProfileAge,
   getSupabaseTrainingRecommendations,
@@ -18,6 +19,7 @@ import {
   getSupabaseWorkoutStats,
   saveSupabaseProfileAge,
 } from "./supabaseFitness";
+import { askCoachWithGemini } from "./recommendations/serverAiProvider";
 import { migrateLegacyLocalFitnessData } from "./supabaseMigration";
 import { Dashboard } from "./pages/Dashboard";
 import { AuthPage } from "./pages/AuthPage";
@@ -26,6 +28,8 @@ import { Profile } from "./pages/Profile";
 import type {
   CreateWorkoutPayload,
   AuthUser,
+  CoachMessage,
+  CoachReply,
   Page,
   RecommendationGoal,
   TrainingRecommendation,
@@ -157,6 +161,34 @@ export default function App() {
     await changeSupabasePassword(currentPassword, newPassword);
   }
 
+  async function handleAskCoach(
+    recommendation: TrainingRecommendation,
+    question: string,
+    conversation: CoachMessage[],
+  ): Promise<CoachReply> {
+    try {
+      return await askCoachWithGemini({
+        currentRecommendation: recommendation,
+        question,
+        conversation,
+        workouts,
+        goal,
+        age: profileAge,
+      });
+    } catch {
+      return {
+        message:
+          "Coach is unavailable right now, so keep the current plan or use the fallback recommendation until AI is back.",
+      };
+    }
+  }
+
+  async function handleConfirmRecommendation(recommendation: TrainingRecommendation) {
+    if (!authUser) return;
+    const activeRecommendation = await confirmSupabaseActiveRecommendation(authUser.id, goal, recommendation);
+    setRecommendations([activeRecommendation]);
+  }
+
   useEffect(() => {
     let isMounted = true;
 
@@ -227,6 +259,8 @@ export default function App() {
           gameRefreshKey={gameRefreshKey}
           goal={goal}
           isLoading={isLoading}
+          onAskCoach={handleAskCoach}
+          onConfirmRecommendation={handleConfirmRecommendation}
           onGoalChange={setGoal}
           recommendations={recommendations}
           stats={stats}

@@ -1,10 +1,10 @@
 import { supabase } from "./supabaseClient";
 import {
-  buildLocalRecommendations,
   buildLocalStats,
   calculateLocalWorkoutXp,
   createWorkoutFromPayload,
 } from "./localFitness";
+import { buildTrainingRecommendations } from "./recommendations";
 import type {
   CreateWorkoutPayload,
   RecommendationGoal,
@@ -36,6 +36,12 @@ type UserPreferenceRow = {
   age: number | null;
   active_goal: RecommendationGoal | null;
   local_migration_completed_at: string | null;
+};
+
+type RecommendationHistoryRow = {
+  id: string;
+  created_at: string;
+  payload: unknown;
 };
 
 function assertUserId(userId: string | number | null | undefined): string {
@@ -155,14 +161,99 @@ export async function saveSupabaseProfileAge(userId: string | number, age: numbe
   if (error) throw error;
 }
 
+function payloadToRecommendation(payload: unknown): TrainingRecommendation | null {
+  if (!payload || typeof payload !== "object") return null;
+  const recommendation = payload as Partial<TrainingRecommendation>;
+  if (!recommendation.title || !recommendation.recommendation || !recommendation.reason || !recommendation.exercise_type) {
+    return null;
+  }
+
+  return recommendation as TrainingRecommendation;
+}
+
+async function getLatestWorkoutCreatedAt(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("workouts")
+    .select("created_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.created_at ?? null;
+}
+
+async function getSupabaseActiveRecommendation(userId: string): Promise<TrainingRecommendation | null> {
+  const { data, error } = await supabase
+    .from("recommendation_history")
+    .select("id,created_at,payload")
+    .eq("user_id", userId)
+    .contains("payload", { is_active_plan: true })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  const row = data as RecommendationHistoryRow;
+  const latestWorkoutCreatedAt = await getLatestWorkoutCreatedAt(userId);
+  if (latestWorkoutCreatedAt && latestWorkoutCreatedAt > row.created_at) return null;
+
+  const recommendation = payloadToRecommendation(row.payload);
+  return recommendation ? { ...recommendation, is_active_plan: true } : null;
+}
+
+export async function confirmSupabaseActiveRecommendation(
+  userId: string | number,
+  goal: RecommendationGoal,
+  recommendation: TrainingRecommendation,
+): Promise<TrainingRecommendation> {
+  const user_id = assertUserId(userId);
+  const activeRecommendation: TrainingRecommendation = {
+    ...recommendation,
+    is_active_plan: true,
+    source: recommendation.source ?? "AI/Gemini",
+  };
+
+  const { error } = await supabase.from("recommendation_history").insert({
+    user_id,
+    goal,
+    category: activeRecommendation.category ?? null,
+    exercise_type: activeRecommendation.exercise_type,
+    title: activeRecommendation.title,
+    recommendation: activeRecommendation.recommendation,
+    reason: activeRecommendation.reason,
+    payload: {
+      ...activeRecommendation,
+      is_active_plan: true,
+      confirmed_at: new Date().toISOString(),
+    },
+  });
+
+  if (error) throw error;
+  return activeRecommendation;
+}
+
 export async function getSupabaseTrainingRecommendations(
   userId: string | number,
   goal: RecommendationGoal,
   age: number,
 ): Promise<TrainingRecommendation[]> {
   const user_id = assertUserId(userId);
+  const activeRecommendation = await getSupabaseActiveRecommendation(user_id);
+  if (activeRecommendation) return [activeRecommendation];
+
   const workouts = await getSupabaseWorkoutHistory(user_id);
-  const recommendations = buildLocalRecommendations(workouts, goal, age);
+  const recommendationResult = await buildTrainingRecommendations({
+    userId: user_id,
+    workouts,
+    goal,
+    age,
+    requestedAt: new Date().toISOString(),
+  });
+  const recommendations = recommendationResult.recommendations;
 
   if (recommendations.length > 0) {
     const rows = recommendations.map((recommendation) => ({
@@ -173,7 +264,11 @@ export async function getSupabaseTrainingRecommendations(
       title: recommendation.title,
       recommendation: recommendation.recommendation,
       reason: recommendation.reason,
-      payload: recommendation,
+      payload: {
+        ...recommendation,
+        recommendation_engine: recommendationResult.engine,
+        fallback_reason: recommendationResult.fallbackReason ?? null,
+      },
     }));
 
     await supabase.from("recommendation_history").insert(rows);

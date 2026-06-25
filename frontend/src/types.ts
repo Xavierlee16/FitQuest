@@ -83,18 +83,32 @@ export type TrainingRecommendation = {
   goal: string;
   category?: string;
   exercise_type: string;
+  source?: "AI" | "AI/Gemini" | "Fallback" | "Rule engine";
+  confidence?: number;
+  is_active_plan?: boolean;
   workout_type?: string;
   intensity?: "easy" | "moderate" | "hard" | "recovery" | "rest";
   target_pace_range?: string;
   target_heart_rate_range?: string;
   suggested_duration?: string;
   target?: string;
+  suggested_action?: string;
   strength_guidance?: string;
   steps?: string[];
   title: string;
   recommendation: string;
   reason: string;
   influenced_by?: string[];
+};
+
+export type CoachMessage = {
+  role: "user" | "coach";
+  content: string;
+};
+
+export type CoachReply = {
+  message: string;
+  recommendation?: TrainingRecommendation;
 };
 
 export type Achievement = {
