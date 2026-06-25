@@ -37,10 +37,10 @@ export function isAiRecommendationsEnabled(): boolean {
 
 function withTimeout(signal: AbortSignal, timeoutMs: number): AbortSignal {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), timeoutMs);
 
   signal.addEventListener("abort", () => controller.abort(), { once: true });
-  controller.signal.addEventListener("abort", () => window.clearTimeout(timeoutId), { once: true });
+  controller.signal.addEventListener("abort", () => globalThis.clearTimeout(timeoutId), { once: true });
 
   return controller.signal;
 }
