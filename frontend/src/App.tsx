@@ -19,7 +19,7 @@ import {
   getSupabaseWorkoutStats,
   saveSupabaseProfileAge,
 } from "./supabaseFitness";
-import { askCoachWithGemini } from "./recommendations/serverAiProvider";
+import { askCoachWithGemini, logBuiltAiConfig } from "./recommendations/serverAiProvider";
 import { migrateLegacyLocalFitnessData } from "./supabaseMigration";
 import { Dashboard } from "./pages/Dashboard";
 import { AuthPage } from "./pages/AuthPage";
@@ -191,6 +191,7 @@ export default function App() {
 
   useEffect(() => {
     let isMounted = true;
+    logBuiltAiConfig("app-start");
 
     getSupabaseAuthSession()
       .then((session) => {

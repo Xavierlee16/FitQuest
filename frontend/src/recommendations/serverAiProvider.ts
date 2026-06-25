@@ -12,9 +12,27 @@ type CoachResponse = {
 };
 
 const AI_TIMEOUT_MS = 8000;
+let hasLoggedClientAiConfig = false;
+
+function logClientAiConfig(context: string) {
+  const enabled = import.meta.env.VITE_AI_RECOMMENDATIONS_ENABLED === "true";
+  console.info("[fitquest-ai] client AI flag", {
+    context,
+    VITE_AI_RECOMMENDATIONS_ENABLED: import.meta.env.VITE_AI_RECOMMENDATIONS_ENABLED ?? "(missing)",
+    enabled,
+  });
+  return enabled;
+}
+
+export function logBuiltAiConfig(context = "manual") {
+  if (hasLoggedClientAiConfig) return;
+  hasLoggedClientAiConfig = true;
+  logClientAiConfig(context);
+}
 
 export function isAiRecommendationsEnabled(): boolean {
-  return import.meta.env.VITE_AI_RECOMMENDATIONS_ENABLED === "true";
+  const enabled = logClientAiConfig("provider-check");
+  return enabled;
 }
 
 function withTimeout(signal: AbortSignal, timeoutMs: number): AbortSignal {
@@ -35,6 +53,12 @@ export const serverAiProvider: RecommendationProvider = {
     }
 
     const controller = new AbortController();
+    console.info("[fitquest-ai] calling server recommendation endpoint", {
+      url: "/api/recommendations",
+      goal: input.goal,
+      workout_count: input.workouts.length,
+    });
+
     const response = await fetch("/api/recommendations", {
       method: "POST",
       headers: {
@@ -45,10 +69,12 @@ export const serverAiProvider: RecommendationProvider = {
     });
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
       console.warn("[fitquest-ai] server recommendation endpoint failed", {
         status: response.status,
+        detail: errorText.slice(0, 180),
       });
-      throw new Error("AI recommendations are unavailable.");
+      throw new Error(`AI endpoint failed with status ${response.status}: ${errorText.slice(0, 140)}`);
     }
 
     const data = (await response.json()) as AiRecommendationResponse;
@@ -61,6 +87,7 @@ export const serverAiProvider: RecommendationProvider = {
 
     console.info("[fitquest-ai] mapped Gemini recommendations", {
       recommendation_count: recommendations.length,
+      first_source: recommendations[0]?.source ?? "(missing)",
     });
 
     return {

@@ -38,10 +38,21 @@ export async function buildTrainingRecommendations(
   input: RecommendationInput,
 ): Promise<RecommendationProviderResult> {
   const aiProvider = getAiRecommendationProvider();
+  console.info("[fitquest-ai] recommendation provider selected", {
+    provider: aiProvider?.name ?? "rule-fallback",
+    goal: input.goal,
+    workout_count: input.workouts.length,
+  });
 
   if (aiProvider) {
     try {
-      return normalizeRecommendations(await aiProvider.generate(input));
+      const result = normalizeRecommendations(await aiProvider.generate(input));
+      console.info("[fitquest-ai] recommendation provider result", {
+        engine: result.engine,
+        recommendation_count: result.recommendations.length,
+        first_source: result.recommendations[0]?.source ?? "(missing)",
+      });
+      return result;
     } catch (error) {
       console.warn("[fitquest-ai] using rule fallback", {
         reason: error instanceof Error ? error.message : "Unknown AI provider error",
@@ -55,6 +66,9 @@ export async function buildTrainingRecommendations(
   }
 
   const fallback = await ruleFallbackProvider.generate(input);
+  console.info("[fitquest-ai] using rule fallback", {
+    reason: "AI recommendations are not configured in the built frontend.",
+  });
   return normalizeRecommendations(
     fallback,
     "AI recommendations are not configured yet, so FitQuest used the rule fallback.",

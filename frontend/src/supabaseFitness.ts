@@ -199,9 +199,20 @@ async function getSupabaseActiveRecommendation(userId: string): Promise<Training
 
   const row = data as RecommendationHistoryRow;
   const latestWorkoutCreatedAt = await getLatestWorkoutCreatedAt(userId);
-  if (latestWorkoutCreatedAt && latestWorkoutCreatedAt > row.created_at) return null;
+  if (latestWorkoutCreatedAt && latestWorkoutCreatedAt > row.created_at) {
+    console.info("[fitquest-ai] active plan completed by newer workout", {
+      active_plan_created_at: row.created_at,
+      latest_workout_created_at: latestWorkoutCreatedAt,
+    });
+    return null;
+  }
 
   const recommendation = payloadToRecommendation(row.payload);
+  console.info("[fitquest-ai] using stored active plan", {
+    found: Boolean(recommendation),
+    source: recommendation?.source ?? "(missing)",
+    title: recommendation?.title ?? "(missing)",
+  });
   return recommendation ? { ...recommendation, is_active_plan: true } : null;
 }
 
@@ -243,7 +254,13 @@ export async function getSupabaseTrainingRecommendations(
 ): Promise<TrainingRecommendation[]> {
   const user_id = assertUserId(userId);
   const activeRecommendation = await getSupabaseActiveRecommendation(user_id);
-  if (activeRecommendation) return [activeRecommendation];
+  if (activeRecommendation) {
+    console.info("[fitquest-ai] recommendation generation skipped for active plan", {
+      source: activeRecommendation.source ?? "(missing)",
+      title: activeRecommendation.title,
+    });
+    return [activeRecommendation];
+  }
 
   const workouts = await getSupabaseWorkoutHistory(user_id);
   const recommendationResult = await buildTrainingRecommendations({

@@ -111,6 +111,13 @@ export async function createAiRecommendationResponse(
   env: RecommendationEnv,
   logger: SafeLogger = console,
 ): Promise<RecommendationResponse> {
+  logger.info("[fitquest-ai] server AI env check", {
+    ai_enabled: env.AI_RECOMMENDATIONS_ENABLED === "true",
+    has_ai_enabled_flag: typeof env.AI_RECOMMENDATIONS_ENABLED === "string",
+    has_gemini_key: Boolean(env.GEMINI_API_KEY),
+    gemini_model: env.GEMINI_MODEL || DEFAULT_MODEL,
+  });
+
   if (env.AI_RECOMMENDATIONS_ENABLED !== "true") {
     logger.info("[fitquest-ai] disabled by AI_RECOMMENDATIONS_ENABLED");
     return { status: 503, body: { error: "AI recommendations are not enabled." } };
@@ -181,6 +188,13 @@ export async function createCoachResponse(
   env: RecommendationEnv,
   logger: SafeLogger = console,
 ): Promise<RecommendationResponse> {
+  logger.info("[fitquest-ai] server coach env check", {
+    ai_enabled: env.AI_RECOMMENDATIONS_ENABLED === "true",
+    has_ai_enabled_flag: typeof env.AI_RECOMMENDATIONS_ENABLED === "string",
+    has_gemini_key: Boolean(env.GEMINI_API_KEY),
+    gemini_model: env.GEMINI_MODEL || DEFAULT_MODEL,
+  });
+
   if (env.AI_RECOMMENDATIONS_ENABLED !== "true") {
     logger.info("[fitquest-ai] coach disabled by AI_RECOMMENDATIONS_ENABLED");
     return { status: 503, body: { error: "AI coach is not enabled." } };
