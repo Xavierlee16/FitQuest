@@ -1,7 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { loadEnv } from "vite";
-import { createAiRecommendationResponse, createCoachResponse } from "./api/recommendationsCore";
 
 function localRecommendationApi(env: Record<string, string>) {
   return {
@@ -48,6 +47,7 @@ function localRecommendationApi(env: Record<string, string>) {
           try {
             const rawBody = Buffer.concat(chunks).toString("utf8");
             const input = rawBody ? JSON.parse(rawBody) : {};
+            const { createAiRecommendationResponse, createCoachResponse } = await import("./api/recommendationsCore");
             const result =
               input.action === "askCoach"
                 ? await createCoachResponse(input, env)
