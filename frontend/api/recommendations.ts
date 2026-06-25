@@ -3,7 +3,7 @@ import {
   createCoachResponse,
   type CoachRequest,
   type RecommendationRequest,
-} from "./recommendationsCore";
+} from "./recommendationsCore.js";
 
 type VercelRequest = {
   method?: string;
